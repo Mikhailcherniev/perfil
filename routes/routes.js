@@ -1,65 +1,39 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import Icon from 'react-native-vector-icons/Ionicons';
-import HomeScreen from './telas/inicio';
-import ProfileScreen from './telas/perfil';
-import SettingsScreen from './telas/chat';
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { auth } from './firebaseConfig'; // Configuração do Firebase
+import { onAuthStateChanged } from 'firebase/auth';
 
-const Tab = createBottomTabNavigator();
+import Login from './telas/inicio'; // Tela de login
+import BottomTabNavigator from './BottomTabNavigator'; // Rotas principais
+
+const Stack = createStackNavigator();
 
 export default function Routes() {
+  const [usuario, setUsuario] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUsuario(user);
+      setLoading(false); // Remover loading após verificar o estado do usuário
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) {
+    return null; // Mostre um splash ou carregamento aqui, se quiser
+  }
+
   return (
-    <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: '#6200ee',
-        tabBarInactiveTintColor: 'white',
-        
-        tabBarStyle: {
-          bottom: 20,        
-          width: '80%',        
-          alignSelf: 'center', 
-          borderRadius: 15,    
-          height: 55,          
-          backgroundColor: '#111',
-          shadowColor: '#000',     
-          shadowOpacity: 0.2,
-          shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 8,
-          
-        },
-        headerShown: false, // Ocultar cabeçalho padrão
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="home-outline" size={size} color={color} />
-          ),
-          tabBarLabel: 'Home', // Rótulo da aba
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="person-outline" size={size} color={color} />
-          ),
-          tabBarLabel: 'Perfil', // Rótulo da aba
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="settings-outline" size={size} color={color} />
-          ),
-          tabBarLabel: 'Configurações', // Rótulo da aba
-        }}
-      />
-    </Tab.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {usuario ? (
+          <Stack.Screen name="Main" component={BottomTabNavigator} />
+        ) : (
+          <Stack.Screen name="Login" component={Login} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
